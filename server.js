@@ -3,24 +3,48 @@ const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const natural = require('natural');
 const fs = require('fs').promises;
+const cors = require('cors'); // Import cors
 const app = express();
 const port = 3000;
+
+app.use(cors());
 
 // Set up multer for file upload
 const upload = multer({ dest: 'uploads/' });
 
 // Define a list of common skills, qualifications, languages, frameworks, degrees, and action words
 const keywords = [
-  // Skills
-  'Kubernetes', 'Docker', 'Golang', 'eBPF', 'microservices', 'AWS', 'Google Cloud Platform', 'problem-solving', 'communication', 'collaboration',
-  // Languages
-  'JavaScript', 'Python', 'Java', 'C++', 'C#', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'TypeScript',
-  // Frameworks
-  'React', 'Angular', 'Vue', 'Django', 'Flask', 'Spring', 'ASP.NET', 'Laravel', 'Rails', 'Express',
-  // Degrees
-  'Bachelor', 'Master', 'Computer Science', 'Software Engineering',
-  // Action words
-  'develop', 'design', 'implement', 'manage', 'lead', 'collaborate', 'optimize', 'troubleshoot', 'mentor', 'guide'
+    // Existing Skills
+    'Kubernetes', 'Docker', 'Golang', 'eBPF', 'microservices', 'AWS', 'Google Cloud Platform', 'problem-solving', 'communication', 'collaboration',
+    'Machine Learning', 'Data Science', 'Cybersecurity', 'Blockchain', 'DevOps', 'SEO', 'UI/UX Design', 'Mobile Development', 'Database Management', 'Network Architecture',
+    // Additional Skills
+    'Agile', 'Scrum', 'Kanban', 'Lean', 'Six Sigma', 'ITIL', 'PMP', 'CI/CD', 'TDD', 'BDD',
+    'Cloud Computing', 'Big Data', 'IoT', 'AR/VR', 'Quantum Computing', 'Ethical Hacking', 'Data Mining', 'Data Visualization', 'Web Scraping', 'Robotic Process Automation',
+
+    // Existing Languages
+    'JavaScript', 'Python', 'Java', 'C++', 'C#', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'TypeScript',
+    'Rust', 'Go', 'Scala', 'Perl', 'R', 'Shell', 'MATLAB', 'Groovy', 'Visual Basic .NET', 'Objective-C',
+    // Additional Languages
+    'Lua', 'Erlang', 'Haskell', 'Clojure', 'Julia', 'F#', 'Dart', 'Elm', 'Elixir', 'COBOL',
+
+    // Existing Frameworks
+    'React', 'Angular', 'Vue', 'Django', 'Flask', 'Spring', 'ASP.NET', 'Laravel', 'Rails', 'Express',
+    'Bootstrap', 'jQuery', 'TensorFlow', 'PyTorch', 'Keras', 'Pandas', 'Scikit-learn', 'Unity', 'Unreal Engine', 'Cordova',
+    // Additional Frameworks
+    'Svelte', 'Next.js', 'Nuxt.js', 'Gatsby', 'Strapi', 'LoopBack', 'NestJS', 'Fastify', 'Meteor', 'Ember.js',
+    'Backbone.js', 'Aurelia', 'Mithril', 'Polymer', 'Alpine.js', 'Stimulus', 'Phoenix', 'Lucky', 'Hanami', 'Trailblazer',
+
+    // Existing Degrees
+    'Bachelor', 'Master', 'Computer Science', 'Software Engineering',
+    // Additional Degrees
+    'Information Technology', 'Information Systems', 'Data Science', 'Cybersecurity', 'Network Engineering', 'AI & Machine Learning', 'Software Development', 'Web Development',
+
+    // Existing Action words
+    'develop', 'design', 'implement', 'manage', 'lead', 'collaborate', 'optimize', 'troubleshoot', 'mentor', 'guide',
+    'coordinate', 'establish', 'execute', 'launch', 'maintain', 'monitor', 'plan', 'research', 'resolve', 'validate',
+    // Additional Action Words
+    'analyze', 'assess', 'build', 'create', 'demonstrate', 'drive', 'enhance', 'facilitate', 'generate', 'identify',
+    'influence', 'integrate', 'leverage', 'maximize', 'negotiate', 'outperform', 'produce', 'quantify', 'restructure', 'simplify'
 ];
 
 // Route for uploading resume and job description
@@ -49,19 +73,20 @@ app.post('/api/process', upload.fields([{ name: 'resume', maxCount: 1 }, { name:
     const lowerCaseJobDescription = jobDescriptionText.text.toLowerCase();
     const lowerCaseResume = resumeText.text.toLowerCase();
 
-    // Check for the presence of each keyword in the job description and resume
     let matchCount = 0;
-    let missingKeywords = [];
-    for (const keyword of keywords) {
-      if (lowerCaseJobDescription.includes(keyword.toLowerCase())) {
-        if (lowerCaseResume.includes(keyword.toLowerCase())) {
-          matchCount += 1;
-          console.log('Matched keyword:', keyword);
-        } else {
-          missingKeywords.push(keyword);
-        }
-      }
+let missingKeywords = []; // Declare missingKeywords here
+let matchedKeywords = [];
+for (const keyword of keywords) {
+  if (lowerCaseJobDescription.includes(keyword.toLowerCase())) {
+    if (lowerCaseResume.includes(keyword.toLowerCase())) {
+      matchCount += 1;
+      matchedKeywords.push(keyword);
+    } else {
+      missingKeywords.push(keyword); // Now missingKeywords is defined
     }
+  }
+}
+console.log('Matched Keywords:', matchedKeywords);
 
     // Calculate the match percentage
     const matchPercentage = (matchCount / keywords.length) * 100;
@@ -76,7 +101,12 @@ app.post('/api/process', upload.fields([{ name: 'resume', maxCount: 1 }, { name:
     }
 
     // Send report to user
-    res.send(report);
+    res.set('Content-Type', 'application/json');
+    res.send({
+      report,
+      matchPercentage: matchPercentage.toFixed(2),
+      keywords: matchedKeywords,
+    });
 
   } catch (error) {
     console.error('Error processing files:', error);
