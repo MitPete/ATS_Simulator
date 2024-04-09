@@ -72,26 +72,29 @@ app.post('/api/process', upload.fields([{ name: 'resume', maxCount: 1 }, { name:
     // Convert the text to lowercase for case-insensitive matching
     const lowerCaseJobDescription = jobDescriptionText.text.toLowerCase();
     const lowerCaseResume = resumeText.text.toLowerCase();
-
+    
     let matchCount = 0;
-let missingKeywords = []; // Declare missingKeywords here
-let matchedKeywords = [];
-for (const keyword of keywords) {
-  if (lowerCaseJobDescription.includes(keyword.toLowerCase())) {
-    if (lowerCaseResume.includes(keyword.toLowerCase())) {
-      matchCount += 1;
-      matchedKeywords.push(keyword);
-    } else {
-      missingKeywords.push(keyword); // Now missingKeywords is defined
+    let missingKeywords = [];
+    let matchedKeywords = [];
+    let jobDescriptionKeywords = [];
+    
+    for (const keyword of keywords) {
+      if (lowerCaseJobDescription.includes(keyword.toLowerCase())) {
+        jobDescriptionKeywords.push(keyword);
+        if (lowerCaseResume.includes(keyword.toLowerCase())) {
+          matchCount += 1;
+          matchedKeywords.push(keyword);
+        } else {
+          missingKeywords.push(keyword);
+        }
+      }
     }
-  }
-}
-console.log('Matched Keywords:', matchedKeywords);
-
+    console.log('Matched Keywords:', matchedKeywords);
+    
     // Calculate the match percentage
-    const matchPercentage = (matchCount / keywords.length) * 100;
+    const matchPercentage = (matchCount / jobDescriptionKeywords.length) * 100;
     let report = `Your resume matches ${matchPercentage.toFixed(2)}% of the job description.`;
-
+    
     // Check if the match percentage meets the threshold
     const threshold = 75;
     if (matchPercentage >= threshold) {
@@ -99,7 +102,7 @@ console.log('Matched Keywords:', matchedKeywords);
     } else {
       report += ' You did not pass the ATS check. Consider adding the following keywords to your resume: ' + missingKeywords.join(', ');
     }
-
+    
     // Send report to user
     res.set('Content-Type', 'application/json');
     res.send({
@@ -107,7 +110,7 @@ console.log('Matched Keywords:', matchedKeywords);
       matchPercentage: matchPercentage.toFixed(2),
       keywords: matchedKeywords,
     });
-
+    
   } catch (error) {
     console.error('Error processing files:', error);
     res.status(500).send('An error occurred while processing the files.');
