@@ -93,17 +93,25 @@ app.post('/api/process', upload.fields([{ name: 'resume', maxCount: 1 }, { name:
       matchPercentage += categoryPercentage * weights[category];
     }
 
+    // Calculate job description category percentages
+    let jobDescriptionCategoryPercentages = {};
+    for (const category in categoryCounts) {
+      const categoryPercentage = categoryCounts[category] / jobDescriptionKeywords.length;
+      jobDescriptionCategoryPercentages[category] = categoryPercentage;
+    }
+
     // Calculate final score
     let finalScore = matchPercentage;
 
     // Check if the match percentage meets the threshold
     const threshold = 75;
     let report = `Your resume matches ${matchPercentage.toFixed(2)}% of the job description.`;
+    let uniqueMissingKeywords = []; // Define uniqueMissingKeywords before the if statement
     if (matchPercentage >= threshold) {
       report += ' You passed the ATS check!';
     } else {
       // Remove duplicate keywords
-      const uniqueMissingKeywords = Array.from(new Set(missingKeywords.map(k => k.keyword)));
+      uniqueMissingKeywords = Array.from(new Set(missingKeywords.map(k => k.keyword)));
       report += ' You did not pass the ATS check. Consider adding the following keywords to your resume: ' + uniqueMissingKeywords.join(', ');
     }
     
@@ -113,9 +121,10 @@ app.post('/api/process', upload.fields([{ name: 'resume', maxCount: 1 }, { name:
       report,
       matchPercentage: matchPercentage.toFixed(2),
       keywords: matchedKeywords,
-      missingKeywords: uniqueMissingKeywords, // Add this line
-      categoryPercentages, // Add this line
-      finalScore: finalScore.toFixed(2) // Add this line
+      missingKeywords: uniqueMissingKeywords,
+      categoryPercentages,
+      jobDescriptionCategoryPercentages,
+      finalScore: finalScore.toFixed(2)
     });
     
   } catch (error) {
